@@ -27,7 +27,7 @@ jobs:
           - macos-latest
           - ubuntu-latest
         node-version:
-          - 18.x
+          - 24.x
 
     steps:
       - name: Checkout Repository
