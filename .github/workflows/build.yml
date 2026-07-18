@@ -1,0 +1,142 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linter
+      run: npm run lint
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Build Windows installer
+      if: matrix.os == 'windows-latest'
+      run: npm run build:win
+    
+    - name: Build macOS DMG
+      if: matrix.os == 'macos-latest'
+      run: npm run build:mac
+      continue-on-error: true
+    
+    - name: Build Linux AppImage
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run build:linux
+      continue-on-error: true
+    
+    - name: Upload Windows installer to artifacts
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: OD-IMS-Windows-Installer
+        path: release/*.exe
+        retention-days: 30
+    
+    - name: Upload macOS DMG to artifacts
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: OD-IMS-macOS-DMG
+        path: release/*.dmg
+        retention-days: 30
+      continue-on-error: true
+    
+    - name: Upload Linux AppImage to artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: OD-IMS-Linux-AppImage
+        path: release/*.AppImage
+        retention-days: 30
+      continue-on-error: true
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download Windows artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: OD-IMS-Windows-Installer
+        path: ./releases
+    
+    - name: Download macOS artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: OD-IMS-macOS-DMG
+        path: ./releases
+      continue-on-error: true
+    
+    - name: Download Linux artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: OD-IMS-Linux-AppImage
+        path: ./releases
+      continue-on-error: true
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: releases/*
+        draft: false
+        prerelease: false
+        body: |
+          ## OD Inventory Management System
+          
+          This release includes the complete production-ready application with:
+          - Argon2id password hashing
+          - Master password-based encryption
+          - Hash-chained audit logging
+          - Encrypted persistent sessions
+          - Encrypted backup management
+          
+          ### Installation
+          
+          **Windows**: Download the `.exe` installer and run it. Follow the setup wizard to install OD IMS.
+          
+          **macOS**: Download the `.dmg` file and drag the application to your Applications folder.
+          
+          **Linux**: Download the `.AppImage` file, make it executable (`chmod +x`), and run it.
+          
+          ### Security Notes
+          
+          - All data is stored locally in an encrypted database
+          - The master password is used to derive encryption keys for sensitive data
+          - Audit logs are hash-chained and tamper-evident
+          - Sessions persist securely with encryption
+          
+          ### System Requirements
+          
+          - Windows: Windows 10 or later
+          - macOS: macOS 11 or later
+          - Linux: Ubuntu 18.04 or later
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

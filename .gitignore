@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+package-lock.json
+.npm-cache-local/
+
+# Build output
+out/
+release/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temporary
+*.tmp
+temp/
+restore_temp/
+
+# Sensitive data
+.encryption
+.od-ims-data/
+*.db
+*.db-shm
+*.db-wal
+
+# Build artifacts
+*.exe
+*.dmg
+*.deb
+*.AppImage
