@@ -75,4 +75,9 @@ export function registerAuditHandlers(): void {
       return { valid: false, total: 0, corruptedAt: null, error: err.message }
     }
   })
+
+
+
+
+  
 }
