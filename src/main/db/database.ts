@@ -1,13 +1,43 @@
-import Database from 'better-sqlite3'
 import { app } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 
-let db: Database.Database | null = null
+type BetterSqlite3Module = typeof import('better-sqlite3')
+
+type BetterSqlite3Database = any
+
+function loadBetterSqlite3Module(): BetterSqlite3Module {
+  const appPath = app.getAppPath()
+  const resourcesRoot = process.resourcesPath || dirname(appPath)
+  const searchRoots = [
+    appPath,
+    join(appPath, 'node_modules'),
+    join(appPath, 'app.asar.unpacked'),
+    join(resourcesRoot, 'app.asar.unpacked'),
+    join(resourcesRoot, 'app.asar.unpacked', 'node_modules')
+  ]
+
+  const searchedPaths: string[] = []
+
+  for (const root of searchRoots) {
+    try {
+      const resolvedPath = require.resolve('better-sqlite3', { paths: [root] })
+      return require(resolvedPath) as BetterSqlite3Module
+    } catch (error) {
+      searchedPaths.push(root)
+    }
+  }
+
+  throw new Error(`[DB] Unable to load better-sqlite3. Searched: ${searchedPaths.join(', ')}`)
+}
+
+const Database = loadBetterSqlite3Module()
+
+let db: BetterSqlite3Database | null = null
 let masterPasswordHash: string | null = null
 let isEncryptionEnabled = false
 
-export function getDb(): Database.Database {
+export function getDb(): BetterSqlite3Database {
   if (!db) throw new Error('Database not initialized')
   return db
 }
@@ -71,7 +101,7 @@ export function initDatabase(masterPassword?: string): void {
   console.log('[DB] Database initialized at', dbPath, { encrypted: isEncryptionEnabled })
 }
 
-function runMigrations(db: Database.Database): void {
+function runMigrations(db: BetterSqlite3Database): void {
   db.exec(`
     -- Settings & Setup
     CREATE TABLE IF NOT EXISTS settings (
@@ -161,6 +191,8 @@ function runMigrations(db: Database.Database): void {
       street TEXT,
       size_marla REAL,
       size_sqft REAL,
+      width_ft REAL,
+      length_ft REAL,
       plot_type TEXT DEFAULT 'Residential',
       price REAL,
       status TEXT NOT NULL DEFAULT 'Available' CHECK(status IN ('Available','Reserved','Sold','Transferred')),

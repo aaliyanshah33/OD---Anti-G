@@ -16,7 +16,7 @@ export default function ProjectsPage(): React.ReactElement {
   const [showModal, setShowModal] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
   const [masterModal, setMasterModal] = useState<{ action: () => void; label: string } | null>(null)
-  const [form, setForm] = useState({ name: '', location: '', description: '', themeColor: '#2fd44f' })
+  const [form, setForm] = useState({ name: '', location: '', description: '', themeColor: '#2fd44f', logoPath: '' })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -30,14 +30,21 @@ export default function ProjectsPage(): React.ReactElement {
 
   const openCreate = () => {
     setEditProject(null)
-    setForm({ name: '', location: '', description: '', themeColor: '#2fd44f' })
+    setForm({ name: '', location: '', description: '', themeColor: '#2fd44f', logoPath: '' })
     setShowModal(true)
   }
 
   const openEdit = (p: Project) => {
     setEditProject(p)
-    setForm({ name: p.name, location: p.location, description: p.description, themeColor: p.theme_color })
+    setForm({ name: p.name, location: p.location, description: p.description, themeColor: p.theme_color, logoPath: p.logo_path || '' })
     setShowModal(true)
+  }
+
+  const handleLogoPick = async () => {
+    const result = await window.api.projects.selectLogo()
+    if (result?.success && result.path) {
+      setForm(f => ({ ...f, logoPath: result.path }))
+    }
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -106,13 +113,18 @@ export default function ProjectsPage(): React.ReactElement {
               <div onClick={() => navigate(`/projects/${p.id}`)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    background: `${p.theme_color}20`,
-                    border: `2px solid ${p.theme_color}50`,
+                    width: 40, height: 40, borderRadius: 14,
+                    background: p.logo_path ? 'transparent' : `${p.theme_color}20`,
+                    border: p.logo_path ? '1px solid var(--border)' : `2px solid ${p.theme_color}50`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: p.theme_color, flexShrink: 0
+                    color: p.theme_color, flexShrink: 0,
+                    overflow: 'hidden'
                   }}>
-                    <FolderOpen size={18} />
+                    {p.logo_path ? (
+                      <img src={`file://${p.logo_path}`} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <FolderOpen size={18} />
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }} className="truncate">{p.name}</div>
@@ -194,6 +206,22 @@ export default function ProjectsPage(): React.ReactElement {
                       ))}
                     </div>
                   </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Project Logo</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleLogoPick}>
+                      {form.logoPath ? 'Change Logo' : 'Upload Logo'}
+                    </button>
+                    {form.logoPath && (
+                      <div style={{ width: 56, height: 56, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={`file://${form.logoPath}`} alt="Project logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
+                    Upload a logo or image so this project can be identified quickly in the dashboard.
+                  </p>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>

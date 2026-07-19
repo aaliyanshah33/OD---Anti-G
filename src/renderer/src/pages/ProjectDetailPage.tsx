@@ -24,7 +24,7 @@ export default function ProjectDetailPage(): React.ReactElement {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     plotNumber: '', block: '', street: '',
-    sizeMarla: '', sizeSqft: '', plotType: 'Residential',
+    sizeMarla: '', sizeSqft: '', widthFt: '', lengthFt: '', plotType: 'Residential',
     price: '', status: 'Available', notes: ''
   })
 
@@ -48,7 +48,7 @@ export default function ProjectDetailPage(): React.ReactElement {
 
   const openCreate = () => {
     setEditPlot(null)
-    setForm({ plotNumber: '', block: '', street: '', sizeMarla: '', sizeSqft: '', plotType: 'Residential', price: '', status: 'Available', notes: '' })
+    setForm({ plotNumber: '', block: '', street: '', sizeMarla: '', sizeSqft: '', widthFt: '', lengthFt: '', plotType: 'Residential', price: '', status: 'Available', notes: '' })
     setShowModal(true)
   }
 
@@ -62,6 +62,7 @@ export default function ProjectDetailPage(): React.ReactElement {
         setForm({
           plotNumber: plot.plot_number, block: plot.block, street: plot.street,
           sizeMarla: String(plot.size_marla), sizeSqft: String(plot.size_sqft),
+          widthFt: String(plot.width_ft ?? ''), lengthFt: String(plot.length_ft ?? ''),
           plotType: plot.plot_type, price: String(plot.price), status: plot.status, notes: plot.notes
         })
         setShowModal(true)
@@ -74,7 +75,7 @@ export default function ProjectDetailPage(): React.ReactElement {
     if (!form.plotNumber.trim()) return
     setSaving(true)
     try {
-      const data = { ...form, projectId: id!, sizeMarla: +form.sizeMarla, sizeSqft: +form.sizeSqft, price: +form.price, userId: user!.id }
+      const data = { ...form, projectId: id!, sizeMarla: +form.sizeMarla, sizeSqft: +form.sizeSqft, widthFt: +form.widthFt, lengthFt: +form.lengthFt, price: +form.price, userId: user!.id }
       if (editPlot) {
         await window.api.plots.update({ id: editPlot.id, data, userId: user!.id })
         toast.success('Plot updated')
@@ -264,6 +265,16 @@ export default function ProjectDetailPage(): React.ReactElement {
                   <div className="form-group">
                     <label className="form-label">Size (Sq.Ft)</label>
                     <input type="number" className="form-input" value={form.sizeSqft} onChange={e => setForm(f => ({ ...f, sizeSqft: e.target.value }))} placeholder="1125" min="0" />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Width (Ft)</label>
+                    <input type="number" className="form-input" value={form.widthFt} onChange={e => setForm(f => ({ ...f, widthFt: e.target.value }))} placeholder="25" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Length (Ft)</label>
+                    <input type="number" className="form-input" value={form.lengthFt} onChange={e => setForm(f => ({ ...f, lengthFt: e.target.value }))} placeholder="45" min="0" />
                   </div>
                 </div>
                 <div className="form-row">

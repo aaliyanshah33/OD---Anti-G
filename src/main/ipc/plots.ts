@@ -29,9 +29,9 @@ export function registerPlotHandlers(): void {
   ipcMain.handle('plots:create', (_, data) => {
     const id = uuidv4()
     getDb().prepare(`
-      INSERT INTO plots (id, project_id, plot_number, block, street, size_marla, size_sqft, plot_type, price, status, notes, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, data.projectId, data.plotNumber, data.block, data.street, data.sizeMarla, data.sizeSqft, data.plotType, data.price, data.status, data.notes, data.userId)
+      INSERT INTO plots (id, project_id, plot_number, block, street, size_marla, size_sqft, width_ft, length_ft, plot_type, price, status, notes, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, data.projectId, data.plotNumber, data.block, data.street, data.sizeMarla, data.sizeSqft, data.widthFt, data.lengthFt, data.plotType, data.price, data.status, data.notes, data.userId)
     writeAuditLog({ action: 'PLOT_CREATE', entityId: id, userId: data.userId, details: `Added plot ${data.plotNumber}` })
     return { success: true, id }
   })
@@ -39,10 +39,10 @@ export function registerPlotHandlers(): void {
   ipcMain.handle('plots:update', (_, { id, data, userId }) => {
     getDb().prepare(`
       UPDATE plots SET
-        plot_number = ?, block = ?, street = ?, size_marla = ?, size_sqft = ?,
+        plot_number = ?, block = ?, street = ?, size_marla = ?, size_sqft = ?, width_ft = ?, length_ft = ?,
         plot_type = ?, price = ?, status = ?, notes = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(data.plotNumber, data.block, data.street, data.sizeMarla, data.sizeSqft, data.plotType, data.price, data.status, data.notes, id)
+    `).run(data.plotNumber, data.block, data.street, data.sizeMarla, data.sizeSqft, data.widthFt, data.lengthFt, data.plotType, data.price, data.status, data.notes, id)
     writeAuditLog({ action: 'PLOT_UPDATE', entityId: id, userId, details: `Updated plot ${data.plotNumber}` })
     return { success: true }
   })

@@ -21,6 +21,19 @@ function App(): React.ReactElement {
   const { session, user, setSession, clearSession, setFirstRun } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [isFirst, setIsFirst] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+
+  useEffect(() => {
+    const storedTheme = window.localStorage.getItem('od-theme')
+    const nextTheme = storedTheme === 'light' ? 'light' : 'dark'
+    setTheme(nextTheme)
+    document.body.classList.toggle('theme-light', nextTheme === 'light')
+  }, [])
+
+  useEffect(() => {
+    document.body.classList.toggle('theme-light', theme === 'light')
+    window.localStorage.setItem('od-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     async function init() {
@@ -85,7 +98,7 @@ function App(): React.ReactElement {
 
   return (
     <>
-      <AppShell user={user} session={session} onLogout={clearSession}>
+      <AppShell user={user} session={session} onLogout={clearSession} theme={theme} toggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />

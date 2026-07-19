@@ -4,17 +4,19 @@ import type { User } from '../types'
 import {
   LayoutDashboard, FolderOpen, MapPin, Users,
   Search, Shield, Settings, Database,
-  Minus, Square, X, ChevronLeft, Menu
+  Minus, Square, X, ChevronLeft, Menu, SunMedium, Moon
 } from 'lucide-react'
 
 interface AppShellProps {
   user: User
   session: string
   onLogout: () => void
+  theme: 'dark' | 'light'
+  toggleTheme: () => void
   children: React.ReactNode
 }
 
-function AppShell({ user, session, onLogout, children }: AppShellProps): React.ReactElement {
+function AppShell({ user, session, onLogout, theme, toggleTheme, children }: AppShellProps): React.ReactElement {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
 
@@ -59,6 +61,9 @@ function AppShell({ user, session, onLogout, children }: AppShellProps): React.R
           Optional Developers — Inventory Maintenance System
         </div>
         <div className="title-bar-controls">
+          <button className="title-bar-btn" onClick={toggleTheme} title="Switch theme">
+            {theme === 'dark' ? <SunMedium size={14} /> : <Moon size={14} />}
+          </button>
           <button className="title-bar-btn" onClick={() => window.api.window.minimize()}>
             <Minus size={12} />
           </button>

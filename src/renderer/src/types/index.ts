@@ -41,6 +41,8 @@ export interface Plot {
   size_sqft: number
   plot_type: string
   price: number
+  width_ft?: number
+  length_ft?: number
   status: 'Available' | 'Reserved' | 'Sold' | 'Transferred'
   notes: string
   created_at: string

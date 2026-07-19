@@ -30,6 +30,7 @@
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "@electron/rebuild": "^4.2.0",
     "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.11.5",
     "@types/react": "^18.2.48",
@@ -60,21 +61,30 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "node_modules/better-sqlite3/build/Release",
+        "to": "better-sqlite3",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ],
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": ["x64"]
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
       ],
-      "icon": "resources/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "OD Inventory System"
+      "icon": "resources/icon.ico",
+      "sign": false,
+      "signAndEditExecutable": false
     },
     "mac": {
       "target": [

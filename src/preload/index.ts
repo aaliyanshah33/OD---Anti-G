@@ -22,7 +22,8 @@ try {
       getById: (id: string) => ipcRenderer.invoke('projects:getById', id),
       create: (data: any) => ipcRenderer.invoke('projects:create', data),
       update: (data: any) => ipcRenderer.invoke('projects:update', data),
-      delete: (data: any) => ipcRenderer.invoke('projects:delete', data)
+      delete: (data: any) => ipcRenderer.invoke('projects:delete', data),
+      selectLogo: () => ipcRenderer.invoke('projects:selectLogo')
     },
     plots: {
       getByProject: (projectId: string) => ipcRenderer.invoke('plots:getByProject', projectId),

@@ -1,7 +1,9 @@
-import { ipcMain } from 'electron'
+import { app, dialog, ipcMain } from 'electron'
 import { getDb } from '../db/database'
 import { writeAuditLog } from '../services/audit'
 import { v4 as uuidv4 } from 'uuid'
+import { copyFileSync, existsSync, mkdirSync } from 'fs'
+import { join, extname } from 'path'
 
 export function registerProjectHandlers(): void {
   ipcMain.handle('projects:getAll', () => {
@@ -31,21 +33,43 @@ export function registerProjectHandlers(): void {
     `).get(id)
   })
 
+  ipcMain.handle('projects:selectLogo', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Project Logo', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }]
+    })
+    if (result.canceled || !result.filePaths.length) {
+      return { success: false }
+    }
+
+    const sourcePath = result.filePaths[0]
+    const userDataPath = app.getPath('userData')
+    const destDir = join(userDataPath, 'od-ims-project-logos')
+    if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true })
+
+    const fileExt = extname(sourcePath) || '.png'
+    const storedName = `${uuidv4()}${fileExt}`
+    const destPath = join(destDir, storedName)
+    copyFileSync(sourcePath, destPath)
+
+    return { success: true, path: destPath }
+  })
+
   ipcMain.handle('projects:create', (_, data) => {
     const id = uuidv4()
     getDb().prepare(`
-      INSERT INTO projects (id, name, location, description, theme_color, created_by)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, data.name, data.location, data.description, data.themeColor, data.userId)
+      INSERT INTO projects (id, name, location, description, theme_color, logo_path, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, data.name, data.location, data.description, data.themeColor, data.logoPath || null, data.userId)
     writeAuditLog({ action: 'PROJECT_CREATE', entityId: id, userId: data.userId, details: `Created project "\${data.name}"` })
     return { success: true, id }
   })
 
   ipcMain.handle('projects:update', (_, { id, data, userId }) => {
     getDb().prepare(`
-      UPDATE projects SET name = ?, location = ?, description = ?, theme_color = ?, updated_at = datetime('now')
+      UPDATE projects SET name = ?, location = ?, description = ?, theme_color = ?, logo_path = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(data.name, data.location, data.description, data.themeColor, id)
+    `).run(data.name, data.location, data.description, data.themeColor, data.logoPath || null, id)
     writeAuditLog({ action: 'PROJECT_UPDATE', entityId: id, userId, details: `Updated project "\${data.name}"` })
     return { success: true }
   })
