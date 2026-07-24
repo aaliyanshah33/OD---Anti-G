@@ -15,7 +15,8 @@ try {
       verifyMasterPassword: (password: string) => ipcRenderer.invoke('auth:verifyMasterPassword', password),
       getUsers: () => ipcRenderer.invoke('auth:getUsers'),
       createUser: (data: any) => ipcRenderer.invoke('auth:createUser', data),
-      toggleUser: (data: any) => ipcRenderer.invoke('auth:toggleUser', data)
+      toggleUser: (data: any) => ipcRenderer.invoke('auth:toggleUser', data),
+      changePassword: (data: any) => ipcRenderer.invoke('auth:changePassword', data)
     },
     projects: {
       getAll: () => ipcRenderer.invoke('projects:getAll'),
@@ -36,7 +37,8 @@ try {
       getAll: () => ipcRenderer.invoke('buyers:getAll'),
       getById: (id: string) => ipcRenderer.invoke('buyers:getById', id),
       create: (data: any) => ipcRenderer.invoke('buyers:create', data),
-      update: (data: any) => ipcRenderer.invoke('buyers:update', data)
+      update: (data: any) => ipcRenderer.invoke('buyers:update', data),
+      selectAttachment: (kind: 'photo' | 'id') => ipcRenderer.invoke('buyers:selectAttachment', kind)
     },
     ownership: {
       getByPlot: (plotId: string) => ipcRenderer.invoke('ownership:getByPlot', plotId),
@@ -47,6 +49,7 @@ try {
       getByPlot: (plotId: string) => ipcRenderer.invoke('documents:getByPlot', plotId),
       openFilePicker: () => ipcRenderer.invoke('documents:openFilePicker'),
       upload: (data: any) => ipcRenderer.invoke('documents:upload', data),
+      update: (data: any) => ipcRenderer.invoke('documents:update', data),
       getContent: (data: any) => ipcRenderer.invoke('documents:getContent', data),
       download: (data: any) => ipcRenderer.invoke('documents:download', data)
     },

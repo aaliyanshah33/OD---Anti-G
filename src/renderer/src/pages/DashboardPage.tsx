@@ -36,9 +36,6 @@ export default function DashboardPage(): React.ReactElement {
 
   useEffect(() => { loadStats() }, [])
 
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-
   const statCards = [
     { label: 'Projects', value: stats?.totalProjects ?? 0, icon: FolderOpen, color: '#2fd44f' },
     { label: 'Total Plots', value: stats?.totalPlots ?? 0, icon: MapPin, color: '#3b82f6' },
@@ -51,9 +48,6 @@ export default function DashboardPage(): React.ReactElement {
     <div className="animate-page-in">
       <div className="page-header">
         <div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4, letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
-            {greeting}
-          </div>
           <h1 className="page-title">{user?.fullName || user?.username}</h1>
           <p className="page-subtitle">Here's what's happening in your inventory system</p>
         </div>

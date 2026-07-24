@@ -5,6 +5,7 @@ import type { Project, Plot } from '../types'
 import { useAuthStore } from '../stores/authStore'
 import { toast } from '../stores/toastStore'
 import MasterPasswordModal from '../components/MasterPasswordModal'
+import { getPlotOwnerDisplayName } from '../../../shared/plotOwnership'
 
 const STATUS_OPTIONS = ['Available', 'Reserved', 'Sold', 'Transferred']
 const PLOT_TYPES = ['Residential', 'Commercial', 'Industrial', 'Mixed']
@@ -178,7 +179,7 @@ export default function ProjectDetailPage(): React.ReactElement {
               key={plot.id}
               className={`plot-cell ${plot.status.toLowerCase()}`}
               onClick={() => navigate(`/plots/${plot.id}`)}
-              title={`Plot ${plot.plot_number} — ${plot.status}${plot.current_owner_name ? ' — ' + plot.current_owner_name : ''}`}
+              title={`Plot ${plot.plot_number} — ${plot.status} — ${getPlotOwnerDisplayName(plot.current_owner_name)}`}
             >
               <div className="plot-number">{plot.plot_number}</div>
               {plot.block && <div className="plot-block">Block {plot.block}</div>}
@@ -217,7 +218,7 @@ export default function ProjectDetailPage(): React.ReactElement {
                   <td>
                     <span className={`badge badge-${plot.status.toLowerCase()}`}>{plot.status}</span>
                   </td>
-                  <td>{plot.current_owner_name || '—'}</td>
+                  <td>{getPlotOwnerDisplayName(plot.current_owner_name)}</td>
                   <td onClick={e => e.stopPropagation()} style={{ width: 80 }}>
                     {user?.role === 'master' && (
                       <div style={{ display: 'flex', gap: 4 }}>

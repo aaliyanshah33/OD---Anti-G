@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, MapPin, FolderOpen, MoreVertical, Edit2, Trash2, X } from 'lucide-react'
+import { Plus, MapPin, FolderOpen, Edit2, Trash2, X } from 'lucide-react'
 import type { Project } from '../types'
 import { useAuthStore } from '../stores/authStore'
 import { toast } from '../stores/toastStore'
 import MasterPasswordModal from '../components/MasterPasswordModal'
 import { useNavigate } from 'react-router-dom'
+import { MAX_ACTIVE_PROJECTS, MAX_ACTIVE_PROJECTS_MESSAGE } from '../../../shared/projectLimits'
 
-const COLORS = ['#2fd44f', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6']
+const DEFAULT_THEME_COLOR = '#2fd44f'
 
 export default function ProjectsPage(): React.ReactElement {
   const { user } = useAuthStore()
@@ -16,8 +17,10 @@ export default function ProjectsPage(): React.ReactElement {
   const [showModal, setShowModal] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
   const [masterModal, setMasterModal] = useState<{ action: () => void; label: string } | null>(null)
-  const [form, setForm] = useState({ name: '', location: '', description: '', themeColor: '#2fd44f', logoPath: '' })
+  const [form, setForm] = useState({ name: '', location: '', description: '', themeColor: DEFAULT_THEME_COLOR, logoPath: '' })
   const [saving, setSaving] = useState(false)
+
+  const atProjectLimit = projects.length >= MAX_ACTIVE_PROJECTS
 
   const load = async () => {
     setLoading(true)
@@ -29,14 +32,18 @@ export default function ProjectsPage(): React.ReactElement {
   useEffect(() => { load() }, [])
 
   const openCreate = () => {
+    if (atProjectLimit) {
+      toast.error(MAX_ACTIVE_PROJECTS_MESSAGE)
+      return
+    }
     setEditProject(null)
-    setForm({ name: '', location: '', description: '', themeColor: '#2fd44f', logoPath: '' })
+    setForm({ name: '', location: '', description: '', themeColor: DEFAULT_THEME_COLOR, logoPath: '' })
     setShowModal(true)
   }
 
   const openEdit = (p: Project) => {
     setEditProject(p)
-    setForm({ name: p.name, location: p.location, description: p.description, themeColor: p.theme_color, logoPath: p.logo_path || '' })
+    setForm({ name: p.name, location: p.location, description: p.description, themeColor: p.theme_color || DEFAULT_THEME_COLOR, logoPath: p.logo_path || '' })
     setShowModal(true)
   }
 
@@ -50,17 +57,27 @@ export default function ProjectsPage(): React.ReactElement {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) return
+    if (!editProject && atProjectLimit) {
+      toast.error(MAX_ACTIVE_PROJECTS_MESSAGE)
+      return
+    }
     setSaving(true)
     try {
       if (editProject) {
         await window.api.projects.update({ id: editProject.id, data: form, userId: user!.id })
         toast.success('Project updated')
+        setShowModal(false)
+        load()
       } else {
-        await window.api.projects.create({ ...form, userId: user!.id })
-        toast.success('Project created')
+        const result = await window.api.projects.create({ ...form, userId: user!.id })
+        if (result?.success === false) {
+          toast.error(result.error || MAX_ACTIVE_PROJECTS_MESSAGE)
+        } else {
+          toast.success('Project created')
+          setShowModal(false)
+          load()
+        }
       }
-      setShowModal(false)
-      load()
     } catch { toast.error('Failed to save project') }
     finally { setSaving(false) }
   }
@@ -84,9 +101,20 @@ export default function ProjectsPage(): React.ReactElement {
       <div className="page-header">
         <div>
           <h1 className="page-title">Projects</h1>
-          <p className="page-subtitle">Manage housing projects and their plot inventories</p>
+          <p className="page-subtitle">
+            Manage housing projects and their plot inventories
+            {' · '}
+            <span style={{ color: atProjectLimit ? 'var(--danger)' : 'var(--text-3)' }}>
+              {projects.length}/{MAX_ACTIVE_PROJECTS} active
+            </span>
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
+        <button
+          className="btn btn-primary"
+          onClick={openCreate}
+          disabled={atProjectLimit}
+          title={atProjectLimit ? MAX_ACTIVE_PROJECTS_MESSAGE : 'Create a new project'}
+        >
           <Plus size={16} /> New Project
         </button>
       </div>
@@ -185,27 +213,9 @@ export default function ProjectsPage(): React.ReactElement {
                   <label className="form-label">Project Name *</label>
                   <input className="form-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Green Valley Phase 1" required autoFocus />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Location</label>
-                    <input className="form-input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="City/Area" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Theme Color</label>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                      {COLORS.map(c => (
-                        <div
-                          key={c}
-                          onClick={() => setForm(f => ({ ...f, themeColor: c }))}
-                          style={{
-                            width: 28, height: 28, borderRadius: '50%', background: c, cursor: 'pointer',
-                            border: form.themeColor === c ? `3px solid white` : '3px solid transparent',
-                            boxShadow: form.themeColor === c ? `0 0 8px ${c}80` : 'none'
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                <div className="form-group">
+                  <label className="form-label">Location</label>
+                  <input className="form-input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="City/Area" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Project Logo</label>

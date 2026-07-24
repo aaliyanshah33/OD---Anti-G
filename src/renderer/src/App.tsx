@@ -63,16 +63,20 @@ function App(): React.ReactElement {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        width: '100%', height: '100%', background: '#060907',
+        width: '100%', height: '100%',
+        background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(47,212,79,0.12), transparent 55%), #060907',
         flexDirection: 'column', gap: '16px'
       }}>
         <div style={{
-          width: '48px', height: '48px',
+          width: '44px', height: '44px',
           border: '2px solid #1e3028',
           borderTopColor: '#2fd44f',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite'
         }} />
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7a9584' }}>
+          Loading OD IMS
+        </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )

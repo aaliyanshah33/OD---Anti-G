@@ -6,48 +6,50 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* === BRAND COLORS === */
+  /* === BRAND COLORS (Dark — default) === */
   --black:         #060907;
-  --black-2:       #0b120d;
-  --surface:       #0f1611;
-  --surface-2:     #141e17;
-  --surface-3:     #1a2920;
-  --border:        #1e3028;
-  --border-2:      #243d2e;
+  --black-2:       #0a100c;
+  --surface:       #0e1511;
+  --surface-2:     #131c16;
+  --surface-3:     #1a261e;
+  --border:        #1c2e24;
+  --border-2:      #274033;
   --green:         #2fd44f;
-  --green-bright:  #48f06a;
-  --green-dim:     #1f8c35;
-  --green-deep:    #179032;
+  --green-bright:  #55f076;
+  --green-dim:     #1f9a38;
+  --green-deep:    #157a2c;
   --green-glow:    rgba(47, 212, 79, 0.12);
   --green-glow-md: rgba(47, 212, 79, 0.22);
   --green-glow-lg: rgba(47, 212, 79, 0.35);
   --muted:         #4a5e52;
-  --muted-2:       #607068;
-  --text:          #e8f5ec;
-  --text-2:        #a8c4b0;
-  --text-3:        #6a8a72;
+  --muted-2:       #6b8274;
+  --text:          #f0faf3;
+  --text-2:        #b4cfc0;
+  --text-3:        #7a9584;
   --white:         #ffffff;
+  --on-green:      #041008;
 
   /* === STATUS COLORS === */
   --available:     #2fd44f;
-  --available-bg:  rgba(47, 212, 79, 0.1);
-  --reserved:      #f59e0b;
-  --reserved-bg:   rgba(245, 158, 11, 0.1);
-  --sold:          #3b82f6;
-  --sold-bg:       rgba(59, 130, 246, 0.1);
-  --transferred:   #8b5cf6;
-  --transferred-bg: rgba(139, 92, 246, 0.1);
-  --danger:        #ef4444;
-  --danger-bg:     rgba(239, 68, 68, 0.1);
+  --available-bg:  rgba(47, 212, 79, 0.12);
+  --reserved:      #f5a623;
+  --reserved-bg:   rgba(245, 166, 35, 0.12);
+  --sold:          #4d8ef7;
+  --sold-bg:       rgba(77, 142, 247, 0.12);
+  --transferred:   #9b7cf5;
+  --transferred-bg: rgba(155, 124, 245, 0.12);
+  --danger:        #f05353;
+  --danger-bg:     rgba(240, 83, 83, 0.12);
 
-  /* === GLOW SHADOWS === */
-  --glow-xs:  0 0 6px rgba(72, 240, 106, 0.3);
-  --glow-sm:  0 0 12px rgba(72, 240, 106, 0.3);
-  --glow-md:  0 0 24px rgba(72, 240, 106, 0.25);
-  --glow-lg:  0 0 48px rgba(72, 240, 106, 0.2);
-  --glow-xl:  0 0 80px rgba(72, 240, 106, 0.15);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.7);
+  /* === GLOW / SHADOWS === */
+  --glow-xs:  0 0 6px rgba(72, 240, 106, 0.28);
+  --glow-sm:  0 0 14px rgba(72, 240, 106, 0.28);
+  --glow-md:  0 0 28px rgba(72, 240, 106, 0.22);
+  --glow-lg:  0 0 48px rgba(72, 240, 106, 0.18);
+  --glow-xl:  0 0 80px rgba(72, 240, 106, 0.12);
+  --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.72);
+  --overlay: rgba(2, 6, 4, 0.72);
 
   /* === TYPOGRAPHY === */
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -57,7 +59,7 @@
   --radius-sm:  6px;
   --radius:     10px;
   --radius-lg:  16px;
-  --radius-xl:  24px;
+  --radius-xl:  22px;
   --radius-full: 9999px;
 
   /* === TRANSITIONS === */
@@ -88,36 +90,56 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
+  color-scheme: dark;
 }
 
+/* === LIGHT THEME — full token remap (keeps layout tokens working) === */
 body.theme-light {
-  background: #f5f7fb;
-  color: #1f2937;
-}
+  color-scheme: light;
+  background: var(--black);
+  color: var(--text);
 
-body.theme-light, body.theme-light .app-root, body.theme-light .app-body, body.theme-light .page-content, body.theme-light .sidebar, body.theme-light .modal, body.theme-light .table, body.theme-light .top-bar {
-  background: #f5f7fb;
-}
+  --black:         #f3f6f4;
+  --black-2:       #ffffff;
+  --surface:       #ffffff;
+  --surface-2:     #eef3f0;
+  --surface-3:     #e2ebe5;
+  --border:        #d5dfd8;
+  --border-2:      #c2cfc7;
+  --green:         #1f9e3e;
+  --green-bright:  #178533;
+  --green-dim:     #157a2e;
+  --green-deep:    #0f5f23;
+  --green-glow:    rgba(31, 158, 62, 0.10);
+  --green-glow-md: rgba(31, 158, 62, 0.16);
+  --green-glow-lg: rgba(31, 158, 62, 0.24);
+  --muted:         #6b7f72;
+  --muted-2:       #84968b;
+  --text:          #0b1610;
+  --text-2:        #3a4f42;
+  --text-3:        #64786c;
+  --white:         #ffffff;
+  --on-green:      #ffffff;
 
-body.theme-light {
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --surface-3: #e2e8f0;
-  --border: #d1d5db;
-  --border-2: #cbd5e1;
-  --text: #111827;
-  --text-2: #475569;
-  --text-3: #64748b;
-  --green: #22c55e;
-  --green-bright: #16a34a;
-  --green-dim: #15803d;
-  --green-deep: #166534;
-  --green-glow: rgba(34, 197, 94, 0.12);
-  --green-glow-md: rgba(34, 197, 94, 0.18);
-  --green-glow-lg: rgba(34, 197, 94, 0.25);
-  --muted: #64748b;
-  --muted-2: #94a3b8;
-  --white: #ffffff;
+  --available:     #1f9e3e;
+  --available-bg:  rgba(31, 158, 62, 0.10);
+  --reserved:      #d97706;
+  --reserved-bg:   rgba(217, 119, 6, 0.10);
+  --sold:          #2563eb;
+  --sold-bg:       rgba(37, 99, 235, 0.10);
+  --transferred:   #7c3aed;
+  --transferred-bg: rgba(124, 58, 237, 0.10);
+  --danger:        #dc2626;
+  --danger-bg:     rgba(220, 38, 38, 0.08);
+
+  --glow-xs:  none;
+  --glow-sm:  0 2px 10px rgba(31, 158, 62, 0.18);
+  --glow-md:  0 4px 18px rgba(31, 158, 62, 0.14);
+  --glow-lg:  0 8px 28px rgba(31, 158, 62, 0.12);
+  --glow-xl:  0 12px 40px rgba(31, 158, 62, 0.10);
+  --shadow-card: 0 6px 24px rgba(12, 28, 18, 0.06);
+  --shadow-modal: 0 24px 64px rgba(12, 28, 18, 0.16);
+  --overlay: rgba(12, 28, 18, 0.45);
 }
 
 .theme-switch-btn {
@@ -137,6 +159,143 @@ body.theme-light {
 .theme-switch-btn:hover {
   background: var(--surface-2);
   color: var(--text);
+  border-color: var(--border);
+}
+
+/* === AUTH SCREENS — always dark brand (readable regardless of app theme) === */
+.auth-screen {
+  --black:         #060907;
+  --black-2:       #0a100c;
+  --surface:       #0e1511;
+  --surface-2:     #131c16;
+  --surface-3:     #1a261e;
+  --border:        #1c2e24;
+  --border-2:      #274033;
+  --green:         #2fd44f;
+  --green-bright:  #55f076;
+  --green-dim:     #1f9a38;
+  --green-glow:    rgba(47, 212, 79, 0.12);
+  --green-glow-md: rgba(47, 212, 79, 0.22);
+  --text:          #f2faf5;
+  --text-2:        #b8d4c0;
+  --text-3:        #7f9b89;
+  --on-green:      #041008;
+  --shadow-modal:  0 24px 64px rgba(0, 0, 0, 0.72);
+  --overlay:       rgba(2, 6, 4, 0.72);
+
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px;
+  overflow: auto;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(47, 212, 79, 0.14), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(47, 212, 79, 0.06), transparent 50%),
+    var(--black);
+  color: var(--text);
+  color-scheme: dark;
+}
+
+.auth-screen__grid {
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  background-image:
+    linear-gradient(var(--green) 1px, transparent 1px),
+    linear-gradient(90deg, var(--green) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.auth-screen__inner {
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-brand__logo {
+  width: 240px;
+  height: auto;
+  display: block;
+  margin: 0 auto 10px;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 32px rgba(47, 212, 79, 0.28));
+  user-select: none;
+  pointer-events: none;
+}
+
+.auth-brand__logo--lg {
+  width: 280px;
+}
+
+.auth-brand__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  line-height: 1.25;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.auth-brand__title--lg {
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+
+.auth-brand__subtitle {
+  font-size: 13px;
+  color: var(--text-3);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.auth-card {
+  background: rgba(14, 21, 17, 0.92);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(47, 212, 79, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+}
+
+.auth-card__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.auth-card__desc {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-bottom: 22px;
+  line-height: 1.45;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+.auth-footer__meta {
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
 }
 
 /* === SCROLLBAR === */
@@ -407,7 +566,7 @@ body.theme-light {
 
 .user-info { overflow: hidden; flex: 1; }
 .user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { font-size: 10px; color: var(--green-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.user-role { font-size: 10px; color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .sidebar.collapsed .user-info { display: none; }
 
 /* === PAGE HEADER === */
@@ -466,8 +625,8 @@ body.theme-light {
 
 .btn-primary {
   background: var(--green);
-  color: var(--black);
-  box-shadow: 0 0 0 0 rgba(47, 212, 79, 0.3);
+  color: var(--on-green);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--green-bright);
@@ -527,11 +686,19 @@ body.theme-light {
   border-radius: var(--radius-lg);
   padding: 20px;
   transition: var(--transition);
-  box-shadow: inset 0 1px 0 rgba(47, 212, 79, 0.05);
+  box-shadow: var(--shadow-card);
 }
 .card-glow:hover {
   border-color: var(--green-dim);
-  box-shadow: inset 0 1px 0 rgba(47, 212, 79, 0.08), 0 4px 24px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(47, 212, 79, 0.08);
+}
+
+body.theme-light .card-glow {
+  box-shadow: var(--shadow-card);
+}
+body.theme-light .card-glow:hover {
+  border-color: var(--green);
+  box-shadow: 0 10px 28px rgba(12, 28, 18, 0.08);
 }
 
 /* === STAT CARD === */
@@ -699,8 +866,8 @@ body.theme-light {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: var(--overlay);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -992,6 +1159,39 @@ body.theme-light {
 .text-sm { font-size: 12px; }
 .font-bold { font-weight: 700; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+body.theme-light .sidebar {
+  background: var(--black-2);
+  border-right-color: var(--border);
+  box-shadow: 4px 0 24px rgba(12, 28, 18, 0.03);
+}
+
+body.theme-light .title-bar {
+  background: var(--black-2);
+  border-bottom-color: var(--border);
+}
+
+body.theme-light .table-wrapper,
+body.theme-light .stat-card,
+body.theme-light .card,
+body.theme-light .modal {
+  box-shadow: var(--shadow-card);
+}
+
+body.theme-light .nav-item.active {
+  background: rgba(31, 158, 62, 0.12);
+  color: var(--green-bright);
+}
+
+body.theme-light .btn-primary {
+  color: #ffffff;
+}
+
+body.theme-light .form-input:focus,
+body.theme-light .form-select:focus,
+body.theme-light .form-textarea:focus {
+  background: #ffffff;
+}
 
 /* Master password confirm box */
 .master-confirm {

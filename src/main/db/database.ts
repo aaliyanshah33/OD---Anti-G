@@ -214,6 +214,7 @@ function runMigrations(db: BetterSqlite3Database): void {
       address TEXT,
       city TEXT,
       photo_path TEXT,
+      id_document_path TEXT,
       notes TEXT,
       created_by TEXT REFERENCES users(id),
       created_at TEXT DEFAULT (datetime('now')),
@@ -289,6 +290,12 @@ function runMigrations(db: BetterSqlite3Database): void {
     CREATE INDEX IF NOT EXISTS idx_payments_plot ON payments(plot_id);
     CREATE INDEX IF NOT EXISTS idx_encrypted_sessions_user ON encrypted_sessions(user_id);
   `)
+
+  // Additive column migrations for existing databases
+  const buyerCols = (db.prepare(`PRAGMA table_info(buyers)`).all() as { name: string }[]).map(c => c.name)
+  if (!buyerCols.includes('id_document_path')) {
+    db.exec(`ALTER TABLE buyers ADD COLUMN id_document_path TEXT`)
+  }
 
   // Initialize security settings if not exists
   const security = db.prepare('SELECT * FROM security WHERE id = ?').get('main') as any

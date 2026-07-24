@@ -1,14 +1,36 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowLeftRight, Upload, FileText, DollarSign, Clock, Download, Eye, Plus, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Upload, FileText, DollarSign, Clock, Download, Eye, Plus, X, Pencil } from 'lucide-react'
 import type { Plot, OwnershipRecord, Document, Payment } from '../types'
 import { useAuthStore } from '../stores/authStore'
 import { toast } from '../stores/toastStore'
 import MasterPasswordModal from '../components/MasterPasswordModal'
+import { DEFAULT_PLOT_OWNER } from '../../../shared/plotOwnership'
 
 const DOC_TYPES = ['Sale Letter', 'Transfer Letter', 'Possession Letter', 'CNIC Copy', 'Receipt', 'Deed', 'Agreement', 'Other']
 const PAYMENT_METHODS = ['Cash', 'Cheque', 'Bank Transfer', 'Online', 'Other']
 const TRANSFER_TYPES = ['Sale', 'Transfer', 'Gift', 'Inheritance']
+
+const MIME_FROM_EXT: Record<string, string> = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+}
+
+function fileMetaFromPath(path: string): { originalName: string; mimeType: string } {
+  const originalName = path.split(/[\\/]/).pop() || 'document'
+  const ext = originalName.split('.').pop()?.toLowerCase() || ''
+  return { originalName, mimeType: MIME_FROM_EXT[ext] || 'application/octet-stream' }
+}
+
+interface DocPreviewState {
+  title: string
+  mimeType: string
+  dataUrl: string
+}
 
 export default function PlotDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -31,9 +53,11 @@ export default function PlotDetailPage(): React.ReactElement {
   const [showPayment, setShowPayment] = useState(false)
   const [paymentForm, setPaymentForm] = useState({ buyerId: '', amount: '', paymentDate: new Date().toISOString().split('T')[0], paymentMethod: 'Cash', referenceNumber: '', notes: '' })
   
-  // Document modal
+  // Document upload / update
   const [showDocUpload, setShowDocUpload] = useState(false)
+  const [editingDoc, setEditingDoc] = useState<Document | null>(null)
   const [docForm, setDocForm] = useState({ docType: 'Sale Letter', filePath: '', originalName: '', mimeType: '' })
+  const [docPreview, setDocPreview] = useState<DocPreviewState | null>(null)
   
   const [saving, setSaving] = useState(false)
 
@@ -104,45 +128,113 @@ export default function PlotDetailPage(): React.ReactElement {
     const result = await window.api.documents.openFilePicker()
     if (!result.canceled && result.filePaths.length > 0) {
       const path = result.filePaths[0]
-      const name = path.split(/[\\/]/).pop() || 'document'
-      const ext = name.split('.').pop()?.toLowerCase() || ''
-      const mimeMap: Record<string, string> = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
-      setDocForm(f => ({ ...f, filePath: path, originalName: name, mimeType: mimeMap[ext] || 'application/octet-stream' }))
+      const meta = fileMetaFromPath(path)
+      setDocForm(f => ({ ...f, filePath: path, ...meta }))
     }
+  }
+
+  const resetDocForm = () => {
+    setDocForm({ docType: 'Sale Letter', filePath: '', originalName: '', mimeType: '' })
+    setEditingDoc(null)
+    setShowDocUpload(false)
+  }
+
+  const openUploadDoc = () => {
+    setEditingDoc(null)
+    setDocForm({ docType: 'Sale Letter', filePath: '', originalName: '', mimeType: '' })
+    setShowDocUpload(true)
+  }
+
+  const openEditDoc = (doc: Document) => {
+    setMasterModal({
+      label: `Update document: ${doc.original_name}`,
+      action: () => {
+        setMasterModal(null)
+        setEditingDoc(doc)
+        setDocForm({ docType: doc.doc_type, filePath: '', originalName: '', mimeType: '' })
+        setShowDocUpload(true)
+      }
+    })
   }
 
   const handleDocUpload = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!docForm.filePath) { toast.error('Select a file first'); return }
+    if (!editingDoc && !docForm.filePath) { toast.error('Select a file first'); return }
+    if (editingDoc && !docForm.filePath && docForm.docType === editingDoc.doc_type) {
+      toast.error('Change the document type or select a new file to update')
+      return
+    }
     setSaving(true)
     try {
-      await window.api.documents.upload({ plotId: id!, docType: docForm.docType, userId: user!.id, filePath: docForm.filePath, originalName: docForm.originalName, mimeType: docForm.mimeType })
-      toast.success('Document uploaded and encrypted')
-      setShowDocUpload(false)
-      setDocForm({ docType: 'Sale Letter', filePath: '', originalName: '', mimeType: '' })
-      load()
-    } catch { toast.error('Upload failed') }
+      if (editingDoc) {
+        const result = await window.api.documents.update({
+          docId: editingDoc.id,
+          docType: docForm.docType,
+          userId: user!.id,
+          filePath: docForm.filePath || undefined,
+          originalName: docForm.originalName || undefined,
+          mimeType: docForm.mimeType || undefined
+        })
+        if (result?.success === false) {
+          toast.error(result.error || 'Update failed')
+        } else {
+          toast.success('Document updated')
+          resetDocForm()
+          load()
+        }
+      } else {
+        await window.api.documents.upload({
+          plotId: id!,
+          docType: docForm.docType,
+          userId: user!.id,
+          filePath: docForm.filePath,
+          originalName: docForm.originalName,
+          mimeType: docForm.mimeType
+        })
+        toast.success('Document uploaded and encrypted')
+        resetDocForm()
+        load()
+      }
+    } catch { toast.error(editingDoc ? 'Update failed' : 'Upload failed') }
     finally { setSaving(false) }
   }
 
   const handleViewDoc = (doc: Document) => {
     setMasterModal({
-      label: `View document: ${doc.original_name}`,
+      label: `Preview document: ${doc.original_name}`,
       action: async () => {
         setMasterModal(null)
         try {
           const result = await window.api.documents.getContent({ docId: doc.id, userId: user!.id })
-          if (result.success) {
-            const blob = new Blob([Uint8Array.from(atob(result.data), c => c.charCodeAt(0))], { type: result.mimeType })
-            const url = URL.createObjectURL(blob)
-            window.open(url, '_blank')
+          if (!result.success) {
+            toast.error(result.error || 'Failed to load document')
+            return
           }
+          const mimeType = result.mimeType || 'application/octet-stream'
+          setDocPreview({
+            title: result.originalName || doc.original_name,
+            mimeType,
+            dataUrl: `data:${mimeType};base64,${result.data}`
+          })
         } catch { toast.error('Failed to load document') }
       }
     })
   }
 
-  const statusColor: Record<string, string> = { Available: 'var(--available)', Reserved: 'var(--reserved)', Sold: 'var(--sold)', Transferred: 'var(--transferred)' }
+  const handleDownloadDoc = (doc: Document) => {
+    setMasterModal({
+      label: `Download ${doc.original_name}`,
+      action: async () => {
+        setMasterModal(null)
+        try {
+          const result = await window.api.documents.download({ docId: doc.id, userId: user!.id })
+          if (result?.canceled) return
+          if (result?.success) toast.success(`Saved as original format: ${doc.original_name}`)
+          else toast.error(result?.error || 'Download failed')
+        } catch { toast.error('Download failed') }
+      }
+    })
+  }
 
   if (loading) return <div className="animate-page-in"><div className="skeleton" style={{ height: 100, borderRadius: 12 }} /></div>
   if (!plot) return <div>Plot not found</div>
@@ -211,14 +303,21 @@ export default function PlotDetailPage(): React.ReactElement {
       {activeTab === 'ownership' && (
         <div>
           {ownership.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon"><Clock size={24} /></div>
-              <div className="empty-title">No ownership records</div>
-              <div className="empty-desc">Transfer ownership to add the first owner</div>
+            <div className="timeline">
+              <div className="timeline-item">
+                <div className="timeline-badge">#0</div>
+                <div className="timeline-body">
+                  <div className="timeline-date">Default ownership · Developer held</div>
+                  <div className="timeline-name">{DEFAULT_PLOT_OWNER}</div>
+                  <div className="timeline-detail">
+                    This plot has not been sold or transferred. Ownership remains with {DEFAULT_PLOT_OWNER}.
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="timeline">
-              {ownership.map((rec, i) => (
+              {ownership.map((rec) => (
                 <div key={rec.id} className="timeline-item">
                   <div className="timeline-badge">#{rec.sequence_number}</div>
                   <div className="timeline-body">
@@ -240,7 +339,7 @@ export default function PlotDetailPage(): React.ReactElement {
       {activeTab === 'documents' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-            <button className="btn btn-primary" onClick={() => setShowDocUpload(true)}><Upload size={14} /> Upload Document</button>
+            <button className="btn btn-primary" onClick={openUploadDoc}><Upload size={14} /> Upload Document</button>
           </div>
           {documents.length === 0 ? (
             <div className="empty-state">
@@ -262,9 +361,12 @@ export default function PlotDetailPage(): React.ReactElement {
                       <td>{doc.uploaded_by_username || '—'}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => handleViewDoc(doc)} title="View"><Eye size={13} /></button>
+                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => handleViewDoc(doc)} title="Preview"><Eye size={13} /></button>
                           {user?.role === 'master' && (
-                            <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setMasterModal({ label: `Download ${doc.original_name}`, action: async () => { setMasterModal(null); await window.api.documents.download({ docId: doc.id, userId: user.id }) } })} title="Download"><Download size={13} /></button>
+                            <>
+                              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEditDoc(doc)} title="Update"><Pencil size={13} /></button>
+                              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => handleDownloadDoc(doc)} title="Download"><Download size={13} /></button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -405,16 +507,22 @@ export default function PlotDetailPage(): React.ReactElement {
         </div>
       )}
 
-      {/* Document Upload Modal */}
+      {/* Document Upload / Update Modal */}
       {showDocUpload && (
-        <div className="modal-overlay" onClick={() => setShowDocUpload(false)}>
+        <div className="modal-overlay" onClick={resetDocForm}>
           <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <span className="modal-title">Upload Document</span>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowDocUpload(false)}><X size={16} /></button>
+              <span className="modal-title">{editingDoc ? 'Update Document' : 'Upload Document'}</span>
+              <button className="btn btn-ghost btn-icon" onClick={resetDocForm}><X size={16} /></button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleDocUpload}>
+                {editingDoc && (
+                  <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14, lineHeight: 1.5 }}>
+                    Updating <strong style={{ color: 'var(--text)' }}>{editingDoc.original_name}</strong>.
+                    You can change the type and/or replace the file. The replacement keeps the original format (PDF, JPG, etc.).
+                  </p>
+                )}
                 <div className="form-group">
                   <label className="form-label">Document Type</label>
                   <select className="form-select" value={docForm.docType} onChange={e => setDocForm(f => ({ ...f, docType: e.target.value }))}>
@@ -422,7 +530,7 @@ export default function PlotDetailPage(): React.ReactElement {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">File</label>
+                  <label className="form-label">{editingDoc ? 'Replace File (optional)' : 'File'}</label>
                   <div
                     onClick={handlePickFile}
                     style={{
@@ -435,16 +543,67 @@ export default function PlotDetailPage(): React.ReactElement {
                   >
                     {docForm.originalName ? (
                       <><FileText size={20} style={{ color: 'var(--green)', marginBottom: 6 }} /><div style={{ color: 'var(--text)', fontWeight: 600 }}>{docForm.originalName}</div></>
+                    ) : editingDoc ? (
+                      <><Upload size={20} style={{ marginBottom: 6 }} /><div>Click to choose a new file, or leave empty to keep the current file</div></>
                     ) : (
                       <><Upload size={20} style={{ marginBottom: 6 }} /><div>Click to select file (PDF, JPG, PNG)</div></>
                     )}
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowDocUpload(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving || !docForm.filePath}>{saving ? 'Encrypting & Uploading...' : 'Upload & Encrypt'}</button>
+                  <button type="button" className="btn btn-secondary" onClick={resetDocForm}>Cancel</button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={saving || (!editingDoc && !docForm.filePath)}
+                  >
+                    {saving
+                      ? (editingDoc ? 'Updating...' : 'Encrypting & Uploading...')
+                      : (editingDoc ? 'Update Document' : 'Upload & Encrypt')}
+                  </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-app document preview */}
+      {docPreview && (
+        <div className="modal-overlay" onClick={() => setDocPreview(null)}>
+          <div
+            className="modal"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: 900, width: '92vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+          >
+            <div className="modal-header">
+              <span className="modal-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                Preview — {docPreview.title}
+              </span>
+              <button className="btn btn-ghost btn-icon" onClick={() => setDocPreview(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body" style={{ flex: 1, overflow: 'auto', minHeight: 360, background: 'var(--surface-2)', borderRadius: 'var(--radius)' }}>
+              {docPreview.mimeType.startsWith('image/') ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 320 }}>
+                  <img
+                    src={docPreview.dataUrl}
+                    alt={docPreview.title}
+                    style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 8 }}
+                  />
+                </div>
+              ) : docPreview.mimeType === 'application/pdf' ? (
+                <iframe
+                  title={docPreview.title}
+                  src={docPreview.dataUrl}
+                  style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8, background: '#fff' }}
+                />
+              ) : (
+                <div className="empty-state" style={{ padding: 40 }}>
+                  <div className="empty-icon"><FileText size={28} /></div>
+                  <div className="empty-title">Preview not available for this file type</div>
+                  <div className="empty-desc">Download the file to open it in an external application.</div>
+                </div>
+              )}
             </div>
           </div>
         </div>

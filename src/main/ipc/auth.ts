@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import { getDb, setMasterPasswordHash, isFirstRun } from '../db/database'
 import { hashChain, hashPasswordArgon2, verifyPasswordArgon2, deriveKeyFromMasterPassword, encryptBuffer, decryptBuffer } from '../services/crypto'
 import { writeAuditLog } from '../services/audit'
+import { validatePasswordStrength } from '../../shared/passwordPolicy'
 import { v4 as uuidv4 } from 'uuid'
 
 const activeSessions = new Map<string, { userId: string; role: string; expiresAt: number }>()
@@ -19,6 +20,10 @@ export function registerAuthHandlers(): void {
   ipcMain.handle('auth:setupMaster', async (_, { username, password, fullName }) => {
     try {
       if (!isFirstRun()) return { success: false, error: 'Master account already exists' }
+
+      const passwordCheck = validatePasswordStrength(password)
+      if (!passwordCheck.valid) return { success: false, error: passwordCheck.error }
+
       const db = getDb()
       const id = uuidv4()
       
@@ -138,6 +143,9 @@ export function registerAuthHandlers(): void {
 
   ipcMain.handle('auth:createUser', async (_, data) => {
     try {
+      const passwordCheck = validatePasswordStrength(data.password)
+      if (!passwordCheck.valid) return { success: false, error: passwordCheck.error }
+
       const id = uuidv4()
       // Hash with Argon2
       const passwordHash = await hashPasswordArgon2(data.password)
@@ -156,6 +164,55 @@ export function registerAuthHandlers(): void {
       return { success: true }
     } catch (err: any) {
       return { success: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('auth:changePassword', async (_, { userId, currentPassword, newPassword }) => {
+    try {
+      if (!userId || !currentPassword || !newPassword) {
+        return { success: false, error: 'All password fields are required' }
+      }
+
+      const passwordCheck = validatePasswordStrength(newPassword)
+      if (!passwordCheck.valid) {
+        return { success: false, error: passwordCheck.error }
+      }
+
+      if (currentPassword === newPassword) {
+        return { success: false, error: 'New password must be different from the current password' }
+      }
+
+      const db = getDb()
+      const user = db.prepare('SELECT id, username, role, password_hash FROM users WHERE id = ? AND is_active = 1').get(userId) as any
+      if (!user) return { success: false, error: 'User not found' }
+
+      const currentValid = await verifyPasswordArgon2(currentPassword, user.password_hash)
+      if (!currentValid) {
+        writeAuditLog({
+          action: 'PASSWORD_CHANGE_FAILED',
+          userId: user.id,
+          details: `Failed password change attempt for ${user.username} — incorrect current password`
+        })
+        return { success: false, error: 'Current password is incorrect' }
+      }
+
+      const newHash = await hashPasswordArgon2(newPassword)
+      db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, user.id)
+
+      // Keep master encryption hash in sync when the master account changes password
+      if (user.role === 'master') {
+        db.prepare(`UPDATE security SET master_password_hash = ?, last_password_change = datetime('now') WHERE id = 'main'`).run(newHash)
+        setMasterPasswordHash(newHash)
+      }
+
+      writeAuditLog({
+        action: 'PASSWORD_CHANGE',
+        userId: user.id,
+        details: `Password changed successfully for ${user.username}`
+      })
+      return { success: true }
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : 'Password change failed' }
     }
   })
 }

@@ -64,6 +64,7 @@ export interface Buyer {
   address: string
   city: string
   photo_path: string | null
+  id_document_path: string | null
   notes: string
   created_at: string
   plot_count?: number

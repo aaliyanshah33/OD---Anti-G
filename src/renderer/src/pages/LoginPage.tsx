@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 import type { User } from '../types'
 import { toast } from '../stores/toastStore'
+import odLogo from '../assets/od-logo.png'
 
 interface LoginPageProps {
   onLogin: (session: string, user: User) => void
@@ -37,49 +38,24 @@ export default function LoginPage({ onLogin }: LoginPageProps): React.ReactEleme
   }
 
   return (
-    <div style={{
-      width: '100%', height: '100%',
-      background: 'var(--black)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24
-    }}>
-      {/* Background grid effect */}
-      <div style={{
-        position: 'fixed', inset: 0, opacity: 0.03,
-        backgroundImage: 'linear-gradient(var(--green) 1px, transparent 1px), linear-gradient(90deg, var(--green) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
-        pointerEvents: 'none'
-      }} />
+    <div className="auth-screen">
+      <div className="auth-screen__grid" aria-hidden />
 
-      <div style={{ width: '100%', maxWidth: 400, position: 'relative' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-            <svg width="60" height="60" viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="30" stroke="#2fd44f" strokeWidth="1.5" fill="none" opacity="0.9" />
-              <ellipse cx="40" cy="40" rx="16" ry="30" stroke="#2fd44f" strokeWidth="1.5" fill="none" opacity="0.7" />
-              <ellipse cx="40" cy="40" rx="30" ry="16" stroke="#2fd44f" strokeWidth="1.5" fill="none" opacity="0.5" />
-              <circle cx="40" cy="40" r="4" fill="#2fd44f" />
-            </svg>
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 6 }}>
-            Optional Developers
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-            Inventory System
-          </h1>
+      <div className="auth-screen__inner">
+        <div className="auth-brand">
+          <img
+            className="auth-brand__logo"
+            src={odLogo}
+            alt="Optional Developers — Opt Optional Options, Priority Is Our Option"
+            draggable={false}
+          />
+          <h1 className="auth-brand__title">Inventory System</h1>
+          <p className="auth-brand__subtitle" style={{ marginTop: 8 }}>Secure offline inventory management</p>
         </div>
 
-        {/* Login card */}
-        <div style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-xl)',
-          padding: '28px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(47,212,79,0.04)'
-        }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Sign In</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>Enter your credentials to access the system</p>
+        <div className="auth-card">
+          <h2 className="auth-card__title">Sign In</h2>
+          <p className="auth-card__desc">Enter your credentials to access the system</p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
@@ -112,6 +88,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): React.ReactEleme
                 <button
                   type="button"
                   onClick={() => setShowPass(s => !s)}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
                   style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)'
@@ -124,11 +101,11 @@ export default function LoginPage({ onLogin }: LoginPageProps): React.ReactEleme
 
             {error && (
               <div style={{
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)',
                 borderRadius: 'var(--radius)', padding: '10px 14px',
-                color: '#ef4444', fontSize: 12, marginBottom: 16
+                color: '#ff8a8a', fontSize: 12, marginBottom: 16, lineHeight: 1.45
               }}>
-                {error}{attempts >= 3 && ' — Contact the Master Administrator if you are locked out.'}
+                {error}{attempts >= 3 && ' — Contact the Admin if you are locked out.'}
               </div>
             )}
 
@@ -136,7 +113,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): React.ReactEleme
               type="submit"
               className="btn btn-primary"
               disabled={loading || !form.username || !form.password}
-              style={{ width: '100%', padding: '11px', gap: 8 }}
+              style={{ width: '100%', padding: '12px', gap: 8 }}
             >
               {loading ? (
                 <><span className="spinner" style={{ width: 16, height: 16 }} /> Signing in...</>
@@ -147,8 +124,9 @@ export default function LoginPage({ onLogin }: LoginPageProps): React.ReactEleme
           </form>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: 'var(--text-3)' }}>
-          🔒 Secure · Offline · Encrypted
+        <div className="auth-footer">
+          <div className="auth-footer__meta">Secure · Offline · Encrypted</div>
+          <div>All rights are reserved to Optional Developers.</div>
         </div>
       </div>
     </div>

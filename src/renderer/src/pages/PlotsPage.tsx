@@ -3,6 +3,7 @@ import { MapPin, Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Plot, Project } from '../types'
 import { toast } from '../stores/toastStore'
+import { getPlotOwnerDisplayName } from '../../../shared/plotOwnership'
 
 export default function PlotsPage(): React.ReactElement {
   const navigate = useNavigate()
@@ -32,7 +33,12 @@ export default function PlotsPage(): React.ReactElement {
   }, [])
 
   const filtered = plots.filter(p => {
-    const matchQ = !query || p.plot_number.toLowerCase().includes(query.toLowerCase()) || (p.block && p.block.toLowerCase().includes(query.toLowerCase())) || (p.current_owner_name && p.current_owner_name.toLowerCase().includes(query.toLowerCase()))
+    const ownerName = getPlotOwnerDisplayName(p.current_owner_name)
+    const q = query.toLowerCase()
+    const matchQ = !query
+      || p.plot_number.toLowerCase().includes(q)
+      || (p.block && p.block.toLowerCase().includes(q))
+      || ownerName.toLowerCase().includes(q)
     const matchS = filterStatus === 'All' || p.status === filterStatus
     const matchP = filterProject === 'All' || p.project_id === filterProject
     return matchQ && matchS && matchP
@@ -81,7 +87,7 @@ export default function PlotsPage(): React.ReactElement {
                     <td>{p.size_marla > 0 ? `${p.size_marla} M` : '—'}</td>
                     <td>{p.price > 0 ? `PKR ${(p.price/1000000).toFixed(1)}M` : '—'}</td>
                     <td><span className={`badge badge-${p.status.toLowerCase()}`}>{p.status}</span></td>
-                    <td>{p.current_owner_name || '—'}</td>
+                    <td>{getPlotOwnerDisplayName(p.current_owner_name)}</td>
                   </tr>
                 )
               })}

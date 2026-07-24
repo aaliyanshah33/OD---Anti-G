@@ -5,21 +5,27 @@ This is a production-ready desktop application developed for Optional Developers
 
 **Status**: Core security implementation completed (v1.0)
 
+**Full documentation**: See `DOCUMENTATION.md` for the detailed technical reference (architecture, setup, schema, IPC, business rules, known limitations). This `project_context.md` file remains the short living summary for day-to-day development.
+
 ## Architecture
 - **Main Process (Node.js)**: SQLite database management, encrypted file storage, hash-chained audit trails, secure backups, and IPC communication.
 - **Renderer Process (React/Vite)**: User interface built with React, React Router, and Zustand state management. Custom title bar, neon-green (#48f06a) theme on dark background.
+- **Branding**: Official Optional Developers logo (`src/renderer/src/assets/od-logo.png`) on Setup/Login. Auth screens use a locked dark brand treatment (`.auth-screen`) so titles like “Inventory System” stay high-contrast white even when the app theme is light. App chrome supports professional dark and light themes via full CSS token remaps (`--text`, `--surface`, `--black`, shadows, `--on-green`).
+- **Sidebar profile**: The bottom-left user card shows the role as "Admin" (master) or "Staff", and clicking it opens a logout confirmation modal (Cancel / Log Out) instead of logging out immediately.
 - **Security Services**: Dedicated modules for cryptography, password hashing, session management, backup encryption, and audit logging.
 
 ## Security Model (Production-Grade)
 
 ### Authentication & Passwords
 - **Two-role system**: Master (admin) and Staff users with different capabilities
+- **Password policy**: Minimum **11 characters**, including at least **one number** and **one special character** — enforced on master setup, staff creation, and password change (shared validator in `src/shared/passwordPolicy.ts`, applied in UI and main-process auth handlers)
 - **Password Hashing**: **Argon2id** (not SHA-256) — industry-standard PBKDF with:
   - Memory cost: 19,456 KB (staff), 65,540 KB (master)
   - Time cost: 2-3 iterations
   - Parallelism: 1-4 threads
   - 16-32 byte salt
 - **Automatic password validation** for sensitive operations (master password re-auth)
+- **Change password**: Available in Settings; requires correct current password before accepting a new one
 
 ### Session Management
 - **Dual-layer sessions**:
@@ -69,13 +75,13 @@ This is a production-ready desktop application developed for Optional Developers
 - `audit_log` — Hash-chained tamper-evident logs
 
 **Real Estate Data**:
-- `projects` — Real estate projects with location and theming
-- `plots` — Individual plots with status (Available, Reserved, Sold, Transferred)
-- `buyers` — Buyer profiles with contact and identity info
+- `projects` — Real estate projects with location and theming. **Maximum 7 active projects** at a time (`src/shared/projectLimits.ts`); create is blocked in UI and main-process when the limit is reached. Soft-deleted projects do not count toward the limit.
+- `plots` — Individual plots with status (Available, Reserved, Sold, Transferred). Until sold/transferred, ownership displays as **Optional Developers** by default.
+- `buyers` — Buyer profiles with contact and identity info; **required** `photo_path` and `id_document_path` (CNIC/Passport) on create
 - `ownership_records` — Append-only plot-to-buyer transfers with timestamps
 
 **Operations**:
-- `documents` — Encrypted document storage with metadata
+- `documents` — Encrypted document storage with metadata; supports **preview**, **update** (master password), and downloads in the **original file format**
 - `payments` — Payment records per plot
 - `backup_metadata` — Backup history with checksums and encryption metadata
 
@@ -98,6 +104,7 @@ This is a production-ready desktop application developed for Optional Developers
 - `logout()` — End session and cleanup
 - `validateSession()` — Verify active session with TTL refresh
 - `verifyMasterPassword()` — Re-auth for sensitive operations
+- `changePassword()` — Change own password (requires correct current password; Argon2 re-hash; syncs master security hash when role is master)
 - `getUsers()`, `createUser()`, `toggleUser()` — User management
 
 **Data Operations** (30+ handlers across 7 modules):
@@ -105,9 +112,9 @@ This is a production-ready desktop application developed for Optional Developers
 - **plots**: Full lifecycle management (Available → Transferred)
 - **buyers**: Registry and contact management
 - **ownership**: Plot-to-buyer transfers (append-only records)
-- **documents**: Encrypted upload/download/view
+- **documents**: Encrypted upload/download/view; **update**, original-format download, and preview content
 - **payments**: Transaction logging with receipts
-- **search**: Full-text search across all entities
+- **search**: Global LIKE-based search across buyers, plots, and projects (case-insensitive, wildcard-escaped input, ordered results, limits of 25/25/10 per entity)
 
 **Maintenance**:
 - `backup:create()` — Encrypted backup with Argon2 derivation
@@ -118,15 +125,15 @@ This is a production-ready desktop application developed for Optional Developers
 
 | Page | Purpose |
 |------|---------|
-| **SetupPage** | First-run master account creation |
-| **LoginPage** | Role-based authentication |
+| **SetupPage** | First-run master account creation (official OD logo header, rights-reserved footer) |
+| **LoginPage** | Role-based authentication (official OD logo header, rights-reserved footer) |
 | **DashboardPage** | Overview, statistics, quick actions |
-| **ProjectsPage/Detail** | Project CRUD and management |
-| **PlotsPage/Detail** | Plot inventory and status tracking |
-| **BuyersPage/Detail** | Buyer registry and contacts |
+| **ProjectsPage/Detail** | Project CRUD and management (no theme color picker; default brand green used). **Hard limit: max 7 active projects** — enforced in UI and `projects:create` IPC |
+| **PlotsPage/Detail** | Plot inventory; documents support upload, **in-app preview** (image/PDF), **update** (master password), and download in the **original file format** (jpg/pdf/etc.) |
+| **BuyersPage/Detail** | Buyer registry; creating a buyer **requires** photo + CNIC/Passport front attachments |
 | **SearchPage** | Cross-entity full-text search |
 | **BackupPage** | Backup creation, restoration, USB export |
-| **SettingsPage** | App configuration and preferences |
+| **SettingsPage** | App configuration, user management, and Change Password (current password required before setting a new one) |
 | **AuditPage** | Tamper-evident audit log viewer |
 
 ## Build & Deployment
@@ -143,10 +150,7 @@ npm run build      # Compile to out/
 npm run build:win  # Create Windows NSIS installer
 ```
 
-**GitHub Actions CI/CD** (configured for automatic .exe builds):
-- Build on Windows runner (handles native modules: better-sqlite3, argon2)
-- Creates NSIS installer automatically
-- Generates release artifacts
+**GitHub Actions CI/CD**: ⏸️ Paused — this phase was skipped and is not being worked on currently. The workflow file exists but should be ignored.
 
 ## Dependencies (Production)
 
@@ -177,7 +181,7 @@ npm run build:win  # Create Windows NSIS installer
 ## Known Limitations & Future Work
 
 - SQLCipher integration (considered; using app-level encryption instead for portability)
-- Master password change functionality (planned)
 - Two-factor authentication (planned)
 - Cloud sync option (deferred; offline-first design maintained)
 - Mobile companion app (future release)
+- Forgotten-password recovery without current password (not implemented; change password requires current password)

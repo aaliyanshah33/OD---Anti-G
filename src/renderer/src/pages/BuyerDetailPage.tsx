@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, MapPin, Phone, Mail, CreditCard, Home } from 'lucide-react'
+import { ArrowLeft, MapPin, Phone, Mail, CreditCard, Home, Contact2 } from 'lucide-react'
 import type { Buyer, OwnershipRecord } from '../types'
 import { toast } from '../stores/toastStore'
+
+function isImagePath(path: string | null | undefined): boolean {
+  return !!path && /\.(jpe?g|png|webp)$/i.test(path)
+}
 
 export default function BuyerDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -38,15 +42,22 @@ export default function BuyerDetailPage(): React.ReactElement {
       </div>
 
       <div className="grid-2">
-        {/* Profile card */}
         <div className="card-glow">
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-            <div style={{
-              width: 60, height: 60, borderRadius: '50%',
-              background: 'var(--green-glow)', border: '2px solid var(--green-dim)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 800, color: 'var(--green-bright)'
-            }}>{initials}</div>
+            {isImagePath(buyer.photo_path) ? (
+              <img
+                src={`file://${buyer.photo_path}`}
+                alt={buyer.full_name}
+                style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--green-dim)' }}
+              />
+            ) : (
+              <div style={{
+                width: 60, height: 60, borderRadius: '50%',
+                background: 'var(--green-glow)', border: '2px solid var(--green-dim)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20, fontWeight: 800, color: 'var(--green-bright)'
+              }}>{initials}</div>
+            )}
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>{buyer.full_name}</div>
               {buyer.father_husband_name && <div style={{ fontSize: 13, color: 'var(--text-3)' }}>S/o — W/o {buyer.father_husband_name}</div>}
@@ -73,9 +84,38 @@ export default function BuyerDetailPage(): React.ReactElement {
               {buyer.notes}
             </div>
           )}
+
+          {(buyer.photo_path || buyer.id_document_path) && (
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Contact2 size={14} style={{ color: 'var(--green)' }} /> Attached Documents
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {buyer.photo_path && (
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 8 }}>Photo</div>
+                    {isImagePath(buyer.photo_path) ? (
+                      <img src={`file://${buyer.photo_path}`} alt="Buyer photo" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--border)' }} />
+                    ) : (
+                      <div style={{ fontSize: 12, color: 'var(--text-2)' }}>Photo on file</div>
+                    )}
+                  </div>
+                )}
+                {buyer.id_document_path && (
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 8 }}>CNIC / Passport</div>
+                    {isImagePath(buyer.id_document_path) ? (
+                      <img src={`file://${buyer.id_document_path}`} alt="ID document" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--border)' }} />
+                    ) : (
+                      <div style={{ fontSize: 12, color: 'var(--text-2)' }}>ID document on file (PDF)</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Ownership history */}
         <div>
           <div className="section-header">
             <span className="section-title">Owned Plots</span>
